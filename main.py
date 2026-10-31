@@ -17,7 +17,6 @@ def canonical_json_dumps(data: dict) -> str:
 def sha256_hash(text: str) -> str:
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
-
 # ==========================================
 # Q2: A2A INVOICE AGENT
 # ==========================================
@@ -269,10 +268,8 @@ async def start_incident(request: Request):
     run_id = body.get("runId")
     if not run_id: return Response(status_code=400)
 
-    # Initial setup / Mock planning
     trace_id = generate_hex_id(32)
     client_span = generate_hex_id(16)
-    
     action_id = "act_" + generate_hex_id(10)
     call_id = "call_" + generate_hex_id(10)
     
@@ -318,7 +315,6 @@ async def incident_receipts(run_id: str, request: Request):
     
     db_entry = incidents_db[run_id]
     
-    # Process Receipt
     if "outcomes" in body:
         db_entry["receiptLog"].append({
             "receiptId": body.get("receiptId", generate_hex_id(8)),
@@ -330,7 +326,6 @@ async def incident_receipts(run_id: str, request: Request):
             "nonce": body["outcomes"][0].get("nonce", "")
         })
         
-        # After diagnostic success, complete the task
         final_state = {
             "runId": run_id,
             "status": "completed",
@@ -344,13 +339,12 @@ async def incident_receipts(run_id: str, request: Request):
                     "traceId": db_entry["trace_id"],
                     "spanId": generate_hex_id(16),
                     "name": "incident-response",
-                    "kind": 2, # SERVER
+                    "kind": 2,
                     "attributes": [
                         {"key": "ga5.run.id", "value": {"stringValue": run_id}},
                         {"key": "ga5.public.marker", "value": {"stringValue": db_entry["original_request"].get("publicMarker", "")}}
                     ]
                 }]}]}]}
-            }
         }
         db_entry["state"] = final_state
         return Response(content=json.dumps(final_state), media_type="application/json")
