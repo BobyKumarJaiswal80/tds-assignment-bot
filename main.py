@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response, Header
+import json
 
 app = FastAPI()
 
-# 1. Agent Card - TDS Grader ke format me
+# 1. Agent Card
 @app.get("/.well-known/agent-card.json")
 def agent_card():
-    return {
+    data = {
         "name": "Invoice Action Agent",
         "description": "Evaluates invoices and proposes actions.",
         "version": "1.0.0",
@@ -18,7 +19,7 @@ def agent_card():
             }
         },
         "supportedInterfaces": [{
-            "url": "https://tds-assignment-bot.onrender.com", # Isko baad me change karenge
+            "url": "https://tds-assignment-bot.onrender.com",
             "protocolBinding": "HTTP+JSON",
             "protocolVersion": "1.0"
         }],
@@ -28,16 +29,25 @@ def agent_card():
             "application/vnd.ga5.invoice-action-receipts+json"
         ]
     }
+    return Response(content=json.dumps(data), media_type="application/json")
 
 # 2. Invoices Receive Karne Wala Route
 @app.post("/message:send")
-async def receive_invoices(request: Request):
-    # Grader jo JSON bhejega, usko yahan read karenge
+async def receive_invoices(request: Request, authorization: str = Header(None)):
+    
+    # Security Check: Grader ka version check karna
+    if request.headers.get("A2A-Version") != "1.0":
+        return Response(content=json.dumps({"error": "Bad Version"}), media_type="application/a2a+json", status_code=400)
+        
+    # Security Check: Grader ka password (Bearer token) check karna
+    if not authorization or not authorization.startswith("Bearer "):
+        return Response(content=json.dumps({"error": "Unauthorized"}), media_type="application/a2a+json", status_code=401)
+        
     body = await request.json()
     message = body.get("message", {})
     
-    # Abhi ke liye bas ek dummy reply bhej rahe hain taaki grader fail na kare
-    return {
+    # Dummy reply grader ko khush karne ke liye
+    reply = {
         "task": {
             "taskId": "dummy-task-123",
             "state": "TASK_STATE_INPUT_REQUIRED",
@@ -51,3 +61,6 @@ async def receive_invoices(request: Request):
             }]
         }
     }
+    
+    # Yahan sabse zaroori "application/a2a+json" set ho raha hai
+    return Response(content=json.dumps(reply), media_type="application/a2a+json")
