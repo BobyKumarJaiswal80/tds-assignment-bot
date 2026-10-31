@@ -18,7 +18,7 @@ def agent_card():
             }
         },
         "supportedInterfaces": [{
-            "url": "TUMHARA_LIVE_URL_YAHAN_AAYEGA", # Isko baad me change karenge
+            "url": "https://tds-assignment-bot.onrender.com", # Isko baad me change karenge
             "protocolBinding": "HTTP+JSON",
             "protocolVersion": "1.0"
         }],
